@@ -28,6 +28,7 @@ jobs:
       registry_fork: shameekganguly/bazel-central-registry
       open_pull_request: false
       attest: false
+      tag_prefix: gz-utils4_
 
     permissions:
       attestations: write
