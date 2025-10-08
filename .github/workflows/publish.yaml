@@ -20,7 +20,24 @@ on:
         required: true
         type: string
 jobs:
+  # The publish-to-bcr reusable workflow expects the version name to be in
+  # semver-(optional build metadata postfix) format, but the repo tags are in
+  # branch_semver-postfix format. This job extracts the branch name as a prefix
+  # to pass to publish-to-bcr.
+  extract_tag_prefix:
+    runs-on: ubuntu-latest
+    outputs:
+      prefix: ${{ steps.extract.outputs.prefix }}
+    steps:
+      - name: Extract the tag prefix from the tag name.
+        id: extract
+        run: |
+          branch=$(echo "${{ inputs.tag_name }}" | cut -d'_' -f1)
+          prefix="${branch}_"
+          echo "prefix=${prefix}" | tee -a "$GITHUB_OUTPUT"
+
   publish:
+    needs: extract_tag_prefix
     uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.0.0
     with:
       tag_name: ${{ inputs.tag_name }}
@@ -28,7 +45,7 @@ jobs:
       registry_fork: shameekganguly/bazel-central-registry
       open_pull_request: false
       attest: false
-      tag_prefix: ${{ github.ref_name }}_
+      tag_prefix: ${{ needs.extract_tag_prefix.outputs.prefix }}
 
     permissions:
       attestations: write
